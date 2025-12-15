@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class TimeBar : MonoBehaviour
+public class TimeBar_Sym : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     internal RectTransform rectXform;

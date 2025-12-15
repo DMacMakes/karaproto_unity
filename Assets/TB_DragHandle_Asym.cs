@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class DragHandle : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class DragHandle_Asym : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public TimeBar timeBar;
+    public TimeBar_Grabby timeBar;
     public string whichEnd;
 
     public void OnBeginDrag(PointerEventData eventData)
