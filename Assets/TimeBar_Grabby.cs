@@ -1,6 +1,10 @@
 using System;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 
 public class TimeBar_Grabby : MonoBehaviour
 {
@@ -9,7 +13,46 @@ public class TimeBar_Grabby : MonoBehaviour
     internal float minWidth = 100.0f;
     //internal Vector2 localPoint;
     public RectTransform LeftHandle;
-    public RectTransform RightHandle; 
+    public RectTransform RightHandle;
+    Dimensions dims;
+
+    // A struct to contain the left and right screenspace x positions of the bar, as well as its width.
+    struct Dimensions
+    {
+        public float left_x;
+        //float _right_x;
+        public float width;
+
+        //public float left_x { get; set; }
+        public float right_x
+        {
+            get { return (left_x + width); }
+            /*set {
+                // Allow setting of the right_x to calculate the new width
+                // rather than requiring both to be set (redundant)
+                //_right_x = value; 
+                width = right_x - left_x;
+            }*/
+        }
+
+        /*public float width
+        {
+            get { return (_width); }
+            set
+            {
+                // Allow setting of the width to update the right_x,
+                // rather than requiring both to be set (redundant)
+                _width = value;
+                _right_x = left_x + value;
+            }
+        }*/
+
+        public override string ToString()
+        {
+            return $"Dims: left x: {left_x} .. width: {width} .. right x: {right_x}";
+        }
+        
+    }
 
     void Start()
     {
@@ -17,12 +60,19 @@ public class TimeBar_Grabby : MonoBehaviour
         Debug.Log("TimeBar_Grabby reporting.");
         rectXform = GetComponent<RectTransform>();
 
-        float newWidth = 400;
-        rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-        Debug.Log($"TimeBar_Grabby resized to {newWidth} wide. Is it that big, and are the rectangles snapped to each end?");
+        //float newWidth = 400;
+        //rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
+        //Debug.Log($"TimeBar_Grabby resized to {newWidth} wide. Is it that big, and are the rectangles snapped to each end?");
 
         //rectXform.
-
+        dims = new Dimensions();
+        //dims.left_x = 
+        
+        
+        dims.left_x = rectXform.anchoredPosition.x;
+        dims.width = rectXform.rect.width;
+        Debug.Log(dims);
+        //Debug.Log($"Event x: {eventData.position.x}");
     }
     // Update is called once per frame
     void Update()
@@ -33,11 +83,11 @@ public class TimeBar_Grabby : MonoBehaviour
     internal void EndTarget_BeginDrag(string whichEnd)
     {
         Debug.Log($"User has grabbed the {whichEnd} end.");
+        // Capture initial start, end and width info for timebar.
     }
 
     internal void EndTarget_UpdateDrag(string whichEnd, PointerEventData eventData)
     {
-
         // Figure out the local location of the mouse click.
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -56,83 +106,34 @@ public class TimeBar_Grabby : MonoBehaviour
         //float rectLastWidth = rectXform.rect.width;
         if (whichEnd == "right")
         {
-            // This should be capped to not encroach on/pass the right handle.
-            // So newwidth can't be less than minWidth.
-            float newWidth = localPoint.x;
-            if (newWidth < minWidth) newWidth = minWidth;
+            float newWidth = Math.Max(localPoint.x, minWidth); // can't take anything smaller than minimum width.
+            dims.width = newWidth;
             rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
         } else if (whichEnd == "left")
         {
-            //if (startingWidth == 0.0f) startingWidth = rectXform.rect.width;
-            //float newX = localPoint.x;
-            float newX = eventData.position.x;
-          //if (newWidth < minWidth)
-            //newWidth = rectLastWidth - localPoint.x; // if moved left, it's below zero, so this will grow rect)
-            rectXform.anchoredPosition = new Vector2(newX, rectXform.anchoredPosition.y);
-            localPoint.x = newX;
-            //rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-            //rectLastWidth = newWidth;
+            // Gather current size and right end x location
+            float oldWidth = rectXform.rect.width;
+            float rightExtent = rectXform.anchoredPosition.x + oldWidth;
+
+            // set the click position to the new left extent, if it doesn't violate minimum width.
+            float newLeftExtent = Math.Min(eventData.position.x, rightExtent - minWidth); 
+
+            // calculate new width to retain right extent
+            float newWidth = rightExtent - newLeftExtent;
+            // move the whole rectangle relative to whatever ui container it's in, changing width to keep right end pinned.
+            rectXform.anchoredPosition = new Vector2(newLeftExtent, rectXform.anchoredPosition.y);
+            rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
+            
+            // Update now pointless dimensions struct.
+            dims.left_x = newLeftExtent;
+            dims.width = newWidth;
+
         }
-            /* Vector2 localPoint;
-             //Debug.Log($"User is dragging {whichEnd} end.");
-             if(RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                 rectXform,
-                 eventData.position,
-                 eventData.pressEventCamera,
-                 out localPoint))
-             Debug.Log($"{localPoint.x}");
-
-             // Resize the TimeBar
-             if (whichEnd == "left")
-             {
-                 float newWidth = 0;
-                 float newHandleX = 0;
-
-                 // Really I should be accounting for the offset of the mouse position from the dragrect's origin,
-                 // because (i think) the pointer drag is causing an initial snap of the rects to match the mouse position.
-                 if (localPoint.x <= -20.0f)
-                 {
-                     newWidth = (Math.Abs(localPoint.x) * 2.0f);
-                     newHandleX = localPoint.x - 2.0f; // adding 2 to the negative position
-                 } else
-                 {
-                     newWidth = 40.0f; // magic number for minimum 20 units either side of pivot.
-                     newHandleX = -22.0f;
-                 }
-                 // Resize the whole time bar (appearance)
-                 rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-                 // Position the drag handle
-                 LeftHandle.anchoredPosition = new Vector2(newHandleX, LeftHandle.anchoredPosition.y);
-             } else if (whichEnd == "right")
-             {
-                 float newWidth = 0;
-                 float newHandleX = 0;
-
-                 // Really I should be accounting for the offset of the mouse position from the dragrect's origin,
-                 // because (i think) the pointer drag is causing an initial snap of the rects to match the mouse position.
-                 if (localPoint.x >= 20.0f)
-                 {
-                     newWidth = (Math.Abs(localPoint.x) * 2.0f);
-                     newHandleX = localPoint.x + 2.0f; // adding 2 to the negative position
-                 }
-                 else
-                 {
-                     newWidth = 40.0f; // magic number for minimum 20 units either side of pivot.
-                     newHandleX = 22.0f;
-                 }
-                 // Resize the whole time bar (appearance)
-                 rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-                 // Position the drag handle
-                 RightHandle.anchoredPosition = new Vector2(newHandleX, RightHandle.anchoredPosition.y);
-             }
-
-             */
-            // move associated end of timer_bar image rectangle to wherever the pivot of the rectangle is, plus or minus 2 unit difference
-            // (or however big that becomes to allow a nice click collider zone for each end of rect.
-        }
+    }
 
     internal void EndTarget_EndDrag(string whichEnd)
     {
         Debug.Log($"User has dropped the {whichEnd} end.");
+        Debug.Log(dims);
     }
 }
