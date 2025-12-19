@@ -6,14 +6,16 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 
-public class TimeBar_Grabby : MonoBehaviour
+public class TimeBubble : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     internal RectTransform rectXform;
     internal float minWidth = 100.0f;
+    float lastMouseX;
     //internal Vector2 localPoint;
-    public RectTransform LeftHandle;
-    public RectTransform RightHandle;
+    public RectTransform leftZone;
+    public RectTransform rightZone;
+    public RectTransform topZone;
     Dimensions dims;
 
     // A struct to contain the left and right screenspace x positions of the bar, as well as its width.
@@ -57,12 +59,12 @@ public class TimeBar_Grabby : MonoBehaviour
     void Start()
     {
         // get child bars
-        Debug.Log("TimeBar_Grabby reporting.");
+        Debug.Log("TimeBubble reporting.");
         rectXform = GetComponent<RectTransform>();
 
         //float newWidth = 400;
         //rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-        //Debug.Log($"TimeBar_Grabby resized to {newWidth} wide. Is it that big, and are the rectangles snapped to each end?");
+        //Debug.Log($"TimeBubble resized to {newWidth} wide. Is it that big, and are the rectangles snapped to each end?");
 
         //rectXform.
         dims = new Dimensions();
@@ -80,13 +82,17 @@ public class TimeBar_Grabby : MonoBehaviour
         
     }
 
-    internal void EndTarget_BeginDrag(string whichEnd)
+    internal void EndTarget_BeginDrag(string zone, PointerEventData eventData)
     {
-        Debug.Log($"User has grabbed the {whichEnd} end.");
+        Debug.Log($"User has grabbed the {zone} end.");
         // Capture initial start, end and width info for timebar.
+        if( zone == "top")
+        {
+            lastMouseX = eventData.position.x;
+        }
     }
 
-    internal void EndTarget_UpdateDrag(string whichEnd, PointerEventData eventData)
+    internal void EndTarget_UpdateDrag(string zone, PointerEventData eventData)
     {
         // Figure out the local location of the mouse click.
         Vector2 localPoint;
@@ -104,12 +110,22 @@ public class TimeBar_Grabby : MonoBehaviour
         //float newWidth = 0.0f;
         //float newX = 0.0f;
         //float rectLastWidth = rectXform.rect.width;
-        if (whichEnd == "right")
+        if (zone == "top")
+        {
+            //Debug.Log($"top pos.x: {eventData.position.x}");
+            float moveDist = eventData.position.x - lastMouseX;
+            float newX = rectXform.anchoredPosition.x + moveDist;
+            rectXform.anchoredPosition = new Vector2(newX, rectXform.anchoredPosition.y);
+            // remember this mouse position, so we know the change next time.
+            lastMouseX = eventData.position.x;
+            
+        }
+        else if  (zone == "right")
         {
             float newWidth = Math.Max(localPoint.x, minWidth); // can't take anything smaller than minimum width.
             dims.width = newWidth;
             rectXform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-        } else if (whichEnd == "left")
+        } else if (zone == "left")
         {
             // Gather current size and right end x location
             float oldWidth = rectXform.rect.width;
