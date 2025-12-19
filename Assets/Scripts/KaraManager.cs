@@ -39,25 +39,31 @@ public class KaraManager : MonoBehaviour
     {
         //if (audSrc.isPlaying) audSrc.Stop();
         Debug.Log($"You told kara manager that loadwav was clicked.");
-        ShowLoadDialog(fileChosen, cancelled, FileBrowser.PickMode.Files, false, null, null, "Load Wav File", "Load");
+        ShowLoadDialog(onFileChosen, cancelled, FileBrowser.PickMode.Files, false, null, null, "Load Wav File", "Load");
     }
 
-    void fileChosen(string[] paths)
+    void onFileChosen(string[] paths)
     {
         Debug.Log($"Load {paths[0]}");
         string filePath = paths[0];
+        
 
         // Read the bytes of the first file via FileBrowserHelpers
         // Contrary to File.ReadAllBytes, this function works on Android 10+, as well
         byte[] wavBytes = FileBrowserHelpers.ReadBytesFromFile(filePath);
         Debug.Log($"Loaded {wavBytes.Length} bytes.");
-        AudioClip wavClip = OpenWavParser.ByteArrayToAudioClip(wavBytes, "War Figs");
+        string fileName = System.IO.Path.GetFileName(filePath);
+        if (fileName == null || fileName.Length == 0) fileName = "War Figs.wav";
+        AudioClip wavClip = OpenWavParser.ByteArrayToAudioClip(wavBytes, "fileName");
+        
 
         if (audioSource != null)
         {
             audioSource.clip = wavClip;
+            audioSource.name = fileName;
         }
-        Debug.Log("wavClip now (maybe) holds a sweet wav AudioClip");
+        Debug.Log($"wavClip now (maybe) holds a sweet wav AudioClip called {fileName}.");
+        Debug.Log($"audioSource.name returns {audioSource.name}");
     }
 
     public void onPlayPauseClicked()
