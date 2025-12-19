@@ -1,6 +1,7 @@
 using SimpleFileBrowser;
 using UnityEngine;
 using static SimpleFileBrowser.FileBrowser;
+using eToile;
 //static extern bool ShowSaveDialog(OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save");
 //static extern bool ShowLoadDialog(OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select");
 
@@ -36,6 +37,14 @@ public class KaraManager : MonoBehaviour
     void fileChosen(string[] paths)
     {
         Debug.Log($"Load {paths[0]}");
+        string filePath = paths[0];
+
+        // Read the bytes of the first file via FileBrowserHelpers
+        // Contrary to File.ReadAllBytes, this function works on Android 10+, as well
+        byte[] wavBytes = FileBrowserHelpers.ReadBytesFromFile(filePath);
+        Debug.Log($"Loaded {wavBytes.Length} bytes.");
+        AudioClip wavClip = OpenWavParser.ByteArrayToAudioClip(wavBytes, "War Figs");
+        Debug.Log("wavClip now (maybe) holds a sweet wav AudioClip");
     }
 
     void cancelled()
