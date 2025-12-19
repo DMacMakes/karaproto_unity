@@ -1,7 +1,8 @@
+using eToile;
 using SimpleFileBrowser;
 using UnityEngine;
+using UnityEngine.Audio;
 using static SimpleFileBrowser.FileBrowser;
-using eToile;
 //static extern bool ShowSaveDialog(OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save");
 //static extern bool ShowLoadDialog(OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select");
 
@@ -10,9 +11,15 @@ using eToile;
 
 public class KaraManager : MonoBehaviour
 {
+    AudioSource audioSource;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
         // Set filters (optional)
         // It is sufficient to set the filters just once (instead of each time before showing the file browser dialog), 
         // if all the dialogs will be using the same filters
@@ -30,6 +37,7 @@ public class KaraManager : MonoBehaviour
 
     public void onLoadWavClicked()
     {
+        //if (audSrc.isPlaying) audSrc.Stop();
         Debug.Log($"You told kara manager that loadwav was clicked.");
         ShowLoadDialog(fileChosen, cancelled, FileBrowser.PickMode.Files, false, null, null, "Load Wav File", "Load");
     }
@@ -44,9 +52,36 @@ public class KaraManager : MonoBehaviour
         byte[] wavBytes = FileBrowserHelpers.ReadBytesFromFile(filePath);
         Debug.Log($"Loaded {wavBytes.Length} bytes.");
         AudioClip wavClip = OpenWavParser.ByteArrayToAudioClip(wavBytes, "War Figs");
+
+        if (audioSource != null)
+        {
+            audioSource.clip = wavClip;
+        }
         Debug.Log("wavClip now (maybe) holds a sweet wav AudioClip");
     }
 
+    public void onPlayPauseClicked()
+    {
+        //if (audSrc.clip) audSrc.Play();
+        if (audioSource != null && audioSource.clip != null)
+        {
+            if (audioSource.isPlaying)
+            {
+                audioSource.Pause();
+            } else
+            {
+                audioSource.Play();
+            }
+        }
+    }
+
+    public void onRewindClicked()
+    {
+        if (audioSource != null && audioSource.clip != null)
+        {
+            audioSource.Stop();
+        }
+    }
     void cancelled()
     {
         Debug.Log("File selection cancelled.");
