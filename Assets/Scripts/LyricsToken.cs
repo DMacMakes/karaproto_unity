@@ -65,6 +65,7 @@ public class LyricsToken : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        // Restore full opacity and go back to catching mouse casts.
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
